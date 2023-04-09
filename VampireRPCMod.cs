@@ -3,6 +3,7 @@ using HarmonyLib;
 using Il2CppSystem;
 using Il2CppVampireSurvivors.Framework;
 using Il2CppVampireSurvivors.Objects.Characters;
+using Il2CppVampireSurvivors.Objects.Characters.Enemies;
 using Il2CppVampireSurvivors.UI;
 using MelonLoader;
 using Newtonsoft.Json;
@@ -40,6 +41,8 @@ namespace VampireRPC
         static System.Action<bool> enabledSettingChanged = UpdateEnabled;
 
         System.DateTime start = System.DateTime.Now;
+
+        static GameManager manager;
 
         private DiscordRpcClient client;
 
@@ -87,22 +90,32 @@ namespace VampireRPC
             // Set large icon to current map and text to map name
             // Set small icon to current hero and text to hero name
 
-            client.SetPresence(new RichPresence()
+            if (manager != null)
             {
-                Details = $"💰: {69}",
-                State = $"💀: {420}",
-                Timestamps = new Timestamps()
+                client.SetPresence(new RichPresence()
                 {
-                    Start = start
-                },
-                Assets = new Assets()
-                {
-                    LargeImageKey = "vampire_survivors_vamp",
-                    LargeImageText = "Map name",
-                    SmallImageKey = "vampire_survivors_vamp",
-                    SmallImageText = "Character Name"
-                }
-            });
+                    // Fix this, this shows the current on screen enemies not killed
+                    Details = $"💀: {-1}",
+                    State = $"💰: {-1}",
+                    Assets = new Assets()
+                    {
+                        // Get assets 
+                        LargeImageKey = "vampire_survivors_vamp",
+                        LargeImageText = $"{manager.Stage.ActiveStageData.stageName}",
+                        SmallImageKey = "vampire_survivors_vamp",
+                        SmallImageText = $"{manager.Player.CurrentCharacterData.charName} lvl {manager.Player.Level}"
+                    }
+                });
+            }
+        }
+
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Awake))]
+        static class PatchGameManager
+        {
+            static void Postfix(GameManager __instance)
+            {
+                manager = __instance;
+            }
         }
 
         [HarmonyPatch(typeof(OptionsController), nameof(OptionsController.BuildGameplayPage))]
