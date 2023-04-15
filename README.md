@@ -16,7 +16,7 @@ A mod for [Vampire survivors](https://store.steampowered.com/app/1794680/Vampire
 This mod adds Discord Rich Presence to the game, which shows what part of the game the player is on, their current run details (like map/character/earned coins and kills), and how long the run has been going.
 
 # Got Issues
-Please report them in the [Issues](https://github.com/LeCloutPanda/VampireRPC/issues) section under the format and follow the example issue
+Please report them in the [Issues](https://github.com/LeCloutPanda/VampireRPC/issues) section following this [Example Issue](https://github.com/LeCloutPanda/VampireRPC/issues/1) as a template
 
 # License 
 Distributed under the MIT License. See `LICENSE` for more information.
