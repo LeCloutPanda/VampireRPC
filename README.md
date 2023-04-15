@@ -1,3 +1,5 @@
+# This mod has not been released yet due to some remaining bugs. If you encounter any errors while building it, kindly report them using the "Issues" tab.
+
 # VampireRPC
 A mod for [Vampire survivors](https://store.steampowered.com/app/1794680/Vampire_Survivors/) that uses [Melon Loader](https://github.com/LavaGang/MelonLoader)
 
@@ -12,6 +14,9 @@ A mod for [Vampire survivors](https://store.steampowered.com/app/1794680/Vampire
 
 # Usage
 This mod adds Discord Rich Presence to the game, which shows what part of the game the player is on, their current run details (like map/character/earned coins and kills), and how long the run has been going.
+
+# Got Issues
+Please report them in the [Issues](https://github.com/LeCloutPanda/VampireRPC/issues) section under the format and follow the example issue
 
 # License 
 Distributed under the MIT License. See `LICENSE` for more information.
