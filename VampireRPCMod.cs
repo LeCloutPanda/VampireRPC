@@ -1,6 +1,9 @@
 ﻿using DiscordRPC;
 using HarmonyLib;
 using Il2CppSystem;
+using Il2CppSystem.Resources;
+using Il2CppVampireSurvivors;
+using Il2CppVampireSurvivors.Data;
 using Il2CppVampireSurvivors.Framework;
 using Il2CppVampireSurvivors.Objects.Characters;
 using Il2CppVampireSurvivors.Objects.Characters.Enemies;
@@ -9,6 +12,9 @@ using MelonLoader;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IO;
+using UnityEngine;
+using UnityEngine.Experimental.Rendering;
+using static MelonLoader.MelonLogger;
 
 namespace VampireRPC
 {
@@ -29,6 +35,15 @@ namespace VampireRPC
 
     public class VampireRPCMod : MelonMod
     {
+        public enum RichPresenceState
+        {
+            Null,
+            Menu,
+            CharacterSelction,
+            InGame,
+            EndScreen
+        }
+
         static readonly string configFolder = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Configs");
         static readonly string filePath = Path.Combine(configFolder, "VampireRPC.json");
 
@@ -40,9 +55,10 @@ namespace VampireRPC
         static bool enabledSettingAdded = false;
         static System.Action<bool> enabledSettingChanged = UpdateEnabled;
 
-        System.DateTime start = System.DateTime.Now;
-
         static GameManager manager;
+        static MainGamePage mainGamePage;
+
+        RichPresenceState state = RichPresenceState.Menu;
 
         private DiscordRpcClient client;
 
@@ -61,13 +77,11 @@ namespace VampireRPC
                 client.Initialize();
                 client.SetPresence(new RichPresence()
                 {
-                    Details = "Sitting in Main menu",
+                    Details = "Main menu",
                     Assets = new Assets()
                     {
-                        LargeImageKey = "vampire_survivors_vamp",
-                        LargeImageText = "Vampire Survivors",
-                        SmallImageKey = "vampire_survivors_vamp",
-                        SmallImageText = "Vampire Survivors"
+                        LargeImageKey = "logo",
+                        LargeImageText = "Vampire Survivors"
                     }
                 });
             }
@@ -80,32 +94,107 @@ namespace VampireRPC
             client.Dispose();
         }
 
-        public override void OnLateUpdate()
+        string stage;
+        string character;
+        RichPresence presence = new RichPresence();
+
+        public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
-            base.OnUpdate();
+            base.OnSceneWasLoaded(buildIndex, sceneName);
 
-            // Set details to gold count
-            // Set state to kill count
-            // Set time to be current playthrough time
-            // Set large icon to current map and text to map name
-            // Set small icon to current hero and text to hero name
+            MelonLogger.Msg(sceneName);
 
-            if (manager != null)
+            switch (sceneName.ToLower())
             {
-                client.SetPresence(new RichPresence()
+                case "mainmenu":
+                    state = RichPresenceState.Menu;
+                    break;
+
+                case "gameplay":
+                    state = RichPresenceState.InGame;
+                    break;
+
+                default:
+                    state = RichPresenceState.Null;
+                    break;
+
+            }
+        }
+
+        public override void OnFixedUpdate() 
+        {
+            base.OnFixedUpdate();
+
+            if (manager != null && mainGamePage != null)
+            {
+
+                var currentStage = manager.Stage.ActiveStageData.stageName;
+                var stageId = currentStage != null ? currentStage.ToLower().Replace(".", " ").Replace(" ", "_") : "logo";
+                var stageName = currentStage != null ? currentStage : "null";
+
+                var currentCharacter = manager.Player.CurrentCharacterData.charName;
+                var characterId = currentCharacter.ToLower().Replace(".", " ").Replace("'", " ").Replace(" ", "_");
+
+                var currentLevel = manager.Player.Level;
+
+                if (stage != stageId) MelonLogger.Msg(stage = stageId);
+                if (character !=  characterId) MelonLogger.Msg(character = characterId);
+
+                switch(state)
                 {
-                    // Fix this, this shows the current on screen enemies not killed
-                    Details = $"💀: {-1}",
-                    State = $"💰: {-1}",
-                    Assets = new Assets()
-                    {
-                        // Get assets 
-                        LargeImageKey = "vampire_survivors_vamp",
-                        LargeImageText = $"{manager.Stage.ActiveStageData.stageName}",
-                        SmallImageKey = "vampire_survivors_vamp",
-                        SmallImageText = $"{manager.Player.CurrentCharacterData.charName} lvl {manager.Player.Level}"
-                    }
-                });
+                    case RichPresenceState.Menu:
+                        presence.Details = "Main Menu";
+                        presence.Assets = new Assets()
+                        {
+                            LargeImageKey = "logo",
+                            LargeImageText = "Vampire Survivors"
+                        };
+                        break;
+
+                    case RichPresenceState.CharacterSelction:
+                        presence.Details = "Selecting a character";
+                        presence.Assets = new Assets()
+                        {
+                            LargeImageKey = "logo",
+                            LargeImageText = "Vampire Survivors"
+                        };                     
+                        break;
+
+
+                    case RichPresenceState.InGame:
+                        presence.Details = $"💀 {mainGamePage._EnemiesText.text} 💰 {mainGamePage._CoinsText.text}";
+                        presence.State = $"{mainGamePage._TimeText.text}";
+                        presence.Assets = new Assets()
+                        {
+                            LargeImageKey = $"{stageId}",
+                            LargeImageText = $"{stageName}",
+                            SmallImageKey = $"{characterId}",
+                            SmallImageText = $"{currentCharacter} lvl {currentLevel}"
+                        };
+                        break;
+
+                    case RichPresenceState.EndScreen:
+                        presence.Details = "Finishing game";
+                        presence.Assets = new Assets()
+                        {
+                            LargeImageKey = "logo",
+                            LargeImageText = "Vampire Survivors"
+                        };
+                        break;
+
+                    default:
+                    case RichPresenceState.Null:
+                        presence.Details = "Playing Vampire Survivors";
+                        presence.Assets = new Assets()
+                        {
+                            LargeImageKey = "logo",
+                            LargeImageText = "Vampire Survivors"
+                        };
+                        break;
+                }
+
+
+                client.SetPresence(presence);
             }
         }
 
@@ -131,6 +220,9 @@ namespace VampireRPC
         [HarmonyPatch(typeof(OptionsController), nameof(OptionsController.AddVisibleJoysticks))]
         static class PatchAddVisibleJoysticks { static void Postfix() => enabledSettingAdded = false; }
 
+
+        [HarmonyPatch(typeof(MainGamePage), nameof(MainGamePage.Awake))]
+        static class PatchMainGamePage { static void Postfix(MainGamePage __instance) => mainGamePage = __instance; }
 
         private static void SetEnabled(bool value)
         {
