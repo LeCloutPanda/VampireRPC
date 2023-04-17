@@ -10,7 +10,7 @@ A mod for [Vampire survivors](https://store.steampowered.com/app/1794680/Vampire
 4) Type **newenginepls** in the **Beta access code** input and hit enter
 5) Download and install [Melon Loader v0.61](https://github.com/LavaGang/MelonLoader/releases/tag/v0.6.1) for Vampire Survivors after it updates with the new engine
 6) Run the game at least once, it may freeze or appear to be frozen give it time to do its thing as it is doing stuff in the background 
-7) Once it's done close the game and download the latest release of [VampireRPC(No public release just yet)](https://github.com/LeCloutPanda/VampireRPC/releases/latest/download/VampireRPC.dll) with additional files and place the mod into the **Mods** folder and the additional files into the **Userlibs** folder
+7) Once it's done close the game and download the latest release of [VampireRPC.dll](https://github.com/LeCloutPanda/VampireRPC/releases/latest/download/VampireRPC.dll) and [DiscordRPC.dll](https://github.com/LeCloutPanda/VampireRPC/releases/latest/download/DiscordRPC.dll) with additional files and place the mod into the **Mods** folder and DiscordRPC into the **Userlibs** folder
 
 # Usage
 This mod adds Discord Rich Presence to the game, which shows what part of the game the player is on, their current run details (like map/character/earned coins and kills), and how long the run has been going.
