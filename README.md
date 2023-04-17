@@ -1,5 +1,3 @@
-# This mod has not been released yet due to some remaining bugs. If you encounter any errors while building it, kindly report them using the "Issues" tab.
-
 # VampireRPC
 A mod for [Vampire survivors](https://store.steampowered.com/app/1794680/Vampire_Survivors/) that uses [Melon Loader](https://github.com/LavaGang/MelonLoader)
 
