@@ -2,17 +2,17 @@
 using HarmonyLib;
 using Il2CppVampireSurvivors;
 using Il2CppVampireSurvivors.Framework;
-using Il2CppVampireSurvivors.UI;
 using MelonLoader;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
 using System.IO;
 
 namespace VampireRPC
 {
     public class ConfigData
     {
-        public string ModVersion = ModInfo.Version;
+        public string Name = ModInfo.Name;
         public bool UseDiscordRPC = false;
     }
 
@@ -22,7 +22,7 @@ namespace VampireRPC
         public const string Description = "Adds in Discord Rich Presence support.";
         public const string Author = "LeCloutPanda";
         public const string Company = "Pandas Hell Hole";
-        public const string Version = "1.0.0";
+        public const string Version = "1.0.2.0";
         public const string DownloadLink = "https://github.com/LeCloutPanda/VampireRPC";
     }
 
@@ -41,18 +41,13 @@ namespace VampireRPC
         static readonly string filePath = Path.Combine(configFolder, "VampireRPC.json");
 
         public static ConfigData config = new ConfigData();
-        static bool enabledSettingAdded = false;
 
         static readonly string appId = "1094309317932482680";
-
-        static void EnabledChanged(bool value) => SetEnabled(value);
-        static System.Action<bool> enabledChanged = EnabledChanged;
 
         static GameManager manager;
         static MainGamePage mainGamePage;
 
         
-
         RichPresenceState state = RichPresenceState.Menu;
 
         private DiscordRpcClient client;
@@ -66,30 +61,30 @@ namespace VampireRPC
             HarmonyLib.Harmony harmony = new HarmonyLib.Harmony("dev.panda.debugmode");
             harmony.PatchAll();
 
+            try
+            {
+                client = new DiscordRpcClient(appId);
+                client.Initialize();
+            }
+            catch (System.Exception ex) { MelonLogger.Msg($"Exception thrown when creating RPC client: {ex}"); }
+
             if (config.UseDiscordRPC)
             {
-                try
-                {
-                    client = new DiscordRpcClient(appId);
-                    client.Initialize();
 
-                    client.SetPresence(new RichPresence()
+                client.SetPresence(new RichPresence()
+                {
+                    Details = "Main menu",
+                    Assets = new Assets()
                     {
-                        Details = "Main menu",
-                        Assets = new Assets()
-                        {
-                            LargeImageKey = "logo",
-                            LargeImageText = "Vampire Survivors"
-                        }
-                    });
-                }
-                catch (System.Exception ex) { MelonLogger.Msg($"Exception thrown when creating RPC client: {ex}"); }
+                        LargeImageKey = "logo",
+                        LargeImageText = "Vampire Survivors"
+                    }
+                });
             }
         }
 
         public override void OnApplicationQuit()
         {
-            MelonLogger.Msg("Closing game");
             client.ClearPresence();
             client.Dispose();
         }
@@ -126,6 +121,22 @@ namespace VampireRPC
             catch(System.Exception ex) { MelonLogger.Error($"Error occured when setting scene: {ex}"); }
         }
 
+        DateTime lastModified;
+
+        public override void OnLateUpdate()
+        {
+            base.OnLateUpdate();
+
+            DateTime lastWriteTime = File.GetLastWriteTime(filePath);
+
+            if (lastModified != lastWriteTime)
+            {
+                lastModified = lastWriteTime);
+                LoadConfig();
+                MelonLogger.Msg($"[{lastModified.ToString("HH:mm:ss")}] Reloading Config for {ModInfo.Name}");
+            }
+        }
+
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
@@ -145,32 +156,36 @@ namespace VampireRPC
                             break;
 
                         case RichPresenceState.InGame:
-                            if (client == null) throw new System.ArgumentException("Client is null");
-                            if (manager == null) throw new System.ArgumentException("Manager is null");
-                            if (mainGamePage == null) throw new System.ArgumentException("MainGamePage is null");
+                            if (client == null) MelonLogger.Error("Client is null");
+                            if (manager == null) MelonLogger.Error("Manager is null");
+                            if (mainGamePage == null) MelonLogger.Error("MainGamePage is null");
 
-                            var currentStage = manager.Stage.ActiveStageData.stageName;
-                            var stageId = currentStage != null ? currentStage.ToLower().Replace(".", " ").Replace(" ", "_") : "logo";
-                            var stageName = currentStage != null ? currentStage : "null";
-
-                            var currentCharacter = manager.Player.CurrentCharacterData.charName;
-                            var characterId = currentCharacter.ToLower().Replace(".", " ").Replace("'", " ").Replace(" ", "_");
-
-                            var currentLevel = manager.Player.Level;
-
-                            if (stage != stageId) MelonLogger.Msg($"Current Stage: {stage = stageId}");
-                            if (stage == "logo" && state != RichPresenceState.EndScreen) state = RichPresenceState.EndScreen; 
-                            if (character != characterId) MelonLogger.Msg($"Current Character: {character = characterId}");
-
-                            presence.Details = $"💀 {mainGamePage._EnemiesText.text} 💰 {mainGamePage._CoinsText.text}";
-                            presence.State = $"{mainGamePage._TimeText.text}";
-                            presence.Assets = new Assets()
+                            if (client != null && manager != null && mainGamePage != null)
                             {
-                                LargeImageKey = $"{stageId}",
-                                LargeImageText = $"{stageName}",
-                                SmallImageKey = $"{characterId}",
-                                SmallImageText = $"{currentCharacter} lvl {currentLevel}"
-                            };
+
+                                var currentStage = manager.Stage.ActiveStageData.stageName;
+                                var stageId = currentStage != null ? currentStage.ToLower().Replace(".", " ").Replace(" ", "_") : "logo";
+                                var stageName = currentStage != null ? currentStage : "null";
+
+                                var currentCharacter = manager.Player.CurrentCharacterData.charName;
+                                var characterId = currentCharacter.ToLower().Replace(".", " ").Replace("'", " ").Replace(" ", "_");
+
+                                var currentLevel = manager.Player.Level;
+
+                                if (stage != stageId) MelonLogger.Msg($"Current Stage: {stage = stageId}");
+                                if (stage == "logo" && state != RichPresenceState.EndScreen) state = RichPresenceState.EndScreen;
+                                if (character != characterId) MelonLogger.Msg($"Current Character: {character = characterId}");
+
+                                presence.Details = $"💀 {mainGamePage._EnemiesText.text} 💰 {mainGamePage._CoinsText.text}";
+                                presence.State = $"{mainGamePage._TimeText.text}";
+                                presence.Assets = new Assets()
+                                {
+                                    LargeImageKey = $"{stageId}",
+                                    LargeImageText = $"{stageName}",
+                                    SmallImageKey = $"{characterId}",
+                                    SmallImageText = $"{currentCharacter} lvl {currentLevel}"
+                                };
+                            }
                             break;
 
                         case RichPresenceState.EndScreen:
@@ -198,54 +213,17 @@ namespace VampireRPC
                 }
                 catch (System.Exception ex) { MelonLogger.Error($"Error in FixedUpdate loop: {ex}"); }
             }
+            else
+            {
+                client.ClearPresence();
+            }
         }
 
         [HarmonyPatch(typeof(GameManager), nameof(GameManager.OnUpdate))]
-        static class PatchGameManager
-        {
-            static void Postfix(GameManager __instance) 
-            {
-                if (manager == null) MelonLogger.Msg($"Setting GameManager variable: {manager = __instance}");
-            }
-        }
-
-        [HarmonyPatch(typeof(OptionsController), nameof(OptionsController.BuildGameplayPage))]
-        static class PatchBuildGameplayPage
-        {
-            static void Postfix(OptionsController __instance)
-            {
-                if (!enabledSettingAdded)
-                {
-                    MelonLogger.Msg($"Adding Enabled option tick box to GamePlay screen");
-                    __instance.AddTickBox("Use Discord RPC", config.UseDiscordRPC, enabledChanged, false);
-                }
-                MelonLogger.Msg($"Setting EnabledSettingAdded variable to true: {enabledSettingAdded = true}");
-            }
-        }
-
-        [HarmonyPatch(typeof(OptionsController), nameof(OptionsController.AddVisibleJoysticks))]
-        static class PatchAddVisibleJoysticks {
-            static void Postfix()
-            {
-                MelonLogger.Msg($"Setting EnabledSettingAdded variable to false: {enabledSettingAdded = false}");
-            }
-        }
-
+        static class PatchGameManager { static void Postfix(GameManager __instance) { if (manager == null) MelonLogger.Msg($"Setting GameManager variable: {manager = __instance}"); } }
 
         [HarmonyPatch(typeof(MainGamePage), nameof(MainGamePage.Awake))]
-        static class PatchMainGamePage
-        {
-            static void Postfix(MainGamePage __instance)
-            {
-                MelonLogger.Msg($"Setting MainGamePage variable: {mainGamePage = __instance}");
-            }
-        }
-
-        private static void SetEnabled(bool value)
-        {
-            ModifyConfigValue("UseDiscordRPC", value);
-            config.UseDiscordRPC = value;
-        }
+        static class PatchMainGamePage { static void Postfix(MainGamePage __instance) => MelonLogger.Msg($"Setting MainGamePage variable: {mainGamePage = __instance}"); }
 
         private static void ValidateConfig()
         {
@@ -259,39 +237,12 @@ namespace VampireRPC
             catch (System.Exception ex) { MelonLogger.Error($"Error validating Config: {ex}"); }
         }
 
-        private static void ModifyConfigValue<T>(string key, T value)
-        {
-            try { 
-                string file = File.ReadAllText(filePath);
-                JObject json = JObject.Parse(file);
-
-                if (!json.ContainsKey(key)) json.Add(key, JToken.FromObject(value));
-                else
-                {
-                    System.Type type = typeof(T);
-                    JToken newValue = JToken.FromObject(value);
-
-                    if (type == typeof(string)) json[key] = newValue.ToString();
-                    else if (type == typeof(int)) json[key] = newValue.ToObject<int>();
-                    else if (type == typeof(bool)) json[key] = newValue.ToObject<bool>();
-                    else { MelonLogger.Error($"Unsupported type '{type.FullName}'"); return; }
-                }
-
-                string finalJson = JsonConvert.SerializeObject(json, Formatting.Indented);
-                File.WriteAllText(filePath, finalJson);
-            }
-            catch(System.Exception ex) { MelonLogger.Error($"Error while modifying Config: {ex}"); }
-
-        }
-
         private static void LoadConfig()
         {
-            ModifyConfigValue("ModVersion", ModInfo.Version);
             JObject json = JObject.Parse(File.ReadAllText(filePath) ?? "{}");
 
-            config.ModVersion = (string)json.GetValue("ModVersion");
+            config.Name = (string)json.GetValue("Name");
             config.UseDiscordRPC = (bool)json.GetValue("UseDiscordRPC");
-
         }
     }
 }
