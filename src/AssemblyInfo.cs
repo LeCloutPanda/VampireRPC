@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using MelonLoader;
-using VampireRPC;
+using VampireRPC.src;
 
 [assembly: AssemblyTitle(ModInfo.Description)]
 [assembly: AssemblyDescription(ModInfo.Description)]
@@ -10,6 +10,6 @@ using VampireRPC;
 [assembly: AssemblyTrademark(ModInfo.Company)]
 [assembly: AssemblyVersion(ModInfo.Version)]
 [assembly: AssemblyFileVersion(ModInfo.Version)]
-[assembly: MelonInfo(typeof(VampireRPCMod), ModInfo.Name, ModInfo.Version, ModInfo.Author, ModInfo.DownloadLink)]
+[assembly: MelonInfo(typeof(VampireRPC.src.VampireRPC), ModInfo.Name, ModInfo.Version, ModInfo.Author, ModInfo.DownloadLink)]
 
 [assembly: MelonGame("poncle", "VampireSurvivors")]

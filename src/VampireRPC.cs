@@ -3,30 +3,24 @@ using HarmonyLib;
 using Il2CppVampireSurvivors;
 using Il2CppVampireSurvivors.Framework;
 using MelonLoader;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
-using System.IO;
+using VSMenuHelper;
+using Il2CppVampireSurvivors.UI;
+using static Il2CppVampireSurvivors.UI.OptionsController;
+using UnityEngine;
 
-namespace VampireRPC
+namespace VampireRPC.src
 {
-    public class ConfigData
-    {
-        public string Name = ModInfo.Name;
-        public bool UseDiscordRPC = false;
-    }
-
     public static class ModInfo
     {
         public const string Name = "Vampire RPC";
         public const string Description = "Adds in Discord Rich Presence support.";
         public const string Author = "LeCloutPanda";
         public const string Company = "Pandas Hell Hole";
-        public const string Version = "1.0.2.0";
+        public const string Version = "1.0.3.0";
         public const string DownloadLink = "https://github.com/LeCloutPanda/VampireRPC";
     }
 
-    public class VampireRPCMod : MelonMod
+    public class VampireRPC : MelonMod
     {
         public enum RichPresenceState
         {
@@ -37,40 +31,36 @@ namespace VampireRPC
             EndScreen
         }
 
-        static readonly string configFolder = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Configs");
-        static readonly string filePath = Path.Combine(configFolder, "VampireRPC.json");
+        private static GameManager manager;
+        private static MainGamePage mainGamePage;
 
-        public static ConfigData config = new ConfigData();
+        private static readonly string appId = "1094309317932482680";
+        private static RichPresenceState state = RichPresenceState.Menu;
+        private static DiscordRpcClient client;
+        private static string stage = "";
+        private static string character = "";
+        private static RichPresence presence = new RichPresence();
 
-        static readonly string appId = "1094309317932482680";
-
-        static GameManager manager;
-        static MainGamePage mainGamePage;
-
-        
-        RichPresenceState state = RichPresenceState.Menu;
-
-        private DiscordRpcClient client;
-
+        private MelonPreferences_Category preferences;
+        private static MelonPreferences_Entry<bool> enabled;
+        private static MenuHelper MenuHelper;
         public override void OnInitializeMelon()
         {
-            base.OnInitializeMelon();
+            preferences = MelonPreferences.CreateCategory("vampirerpc_preferences");
+            enabled = preferences.CreateEntry("enabled", true);
 
-            ValidateConfig();
-
-            HarmonyLib.Harmony harmony = new HarmonyLib.Harmony("dev.panda.debugmode");
-            harmony.PatchAll();
+            MenuHelper = new();
+            DeclareMenuTabs(MenuHelper);
 
             try
             {
                 client = new DiscordRpcClient(appId);
                 client.Initialize();
             }
-            catch (System.Exception ex) { MelonLogger.Msg($"Exception thrown when creating RPC client: {ex}"); }
+            catch (Exception ex) { MelonLogger.Msg($"Exception thrown when creating RPC client: {ex}"); }
 
-            if (config.UseDiscordRPC)
+            if (enabled.Value)
             {
-
                 client.SetPresence(new RichPresence()
                 {
                     Details = "Main menu",
@@ -83,15 +73,40 @@ namespace VampireRPC
             }
         }
 
+        private void DeclareMenuTabs(MenuHelper MenuHelper)
+        {
+            string imagePath = Path.Combine(Directory.GetCurrentDirectory(), "resources", "panda", "vampirerpc.png");
+
+            MenuHelper.DeclareTab("Config Tab", imagePath);
+
+            MenuHelper.AddElementToTab("Config Tab", new TickBox("enabled", () => enabled.Value, (value) => enabled.Value = value));
+        }
+
+        [HarmonyPatch(typeof(OptionsController))]
+        class Example_OptionsController_Patch
+        {
+            [HarmonyPatch(nameof(OptionsController.Construct))]
+            [HarmonyPrefix]
+            static void Construct_Prefix() => MenuHelper.Construct_Prefix();
+
+            [HarmonyPatch(nameof(OptionsController.Initialize))]
+            [HarmonyPrefix]
+            static void Initialize_Prefix(OptionsController __instance) => MenuHelper.Initialize_Prefix(__instance);
+
+            [HarmonyPatch(nameof(OptionsController.GetTabSprite))]
+            [HarmonyPostfix]
+            static void GetTabSprite_Postfix(OptionsTabType t, ref Sprite __result) => __result = MenuHelper.OnGetTabSprite(t) ?? __result;
+
+            [HarmonyPatch(nameof(OptionsController.BuildPage))]
+            [HarmonyPrefix]
+            static bool BuildPage_Prefix(OptionsController __instance, OptionsTabType type) => MenuHelper.OnBuildPage(__instance, type);
+        }
+
         public override void OnApplicationQuit()
         {
             client.ClearPresence();
             client.Dispose();
         }
-
-        string stage = "";
-        string character = "";
-        RichPresence presence = new RichPresence();
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
@@ -118,29 +133,13 @@ namespace VampireRPC
 
                 }
             }
-            catch(System.Exception ex) { MelonLogger.Error($"Error occured when setting scene: {ex}"); }
-        }
-
-        DateTime lastModified;
-
-        public override void OnLateUpdate()
-        {
-            base.OnLateUpdate();
-
-            DateTime lastWriteTime = File.GetLastWriteTime(filePath);
-
-            if (lastModified != lastWriteTime)
-            {
-                lastModified = lastWriteTime);
-                LoadConfig();
-                MelonLogger.Msg($"[{lastModified.ToString("HH:mm:ss")}] Reloading Config for {ModInfo.Name}");
-            }
+            catch (Exception ex) { MelonLogger.Error($"Error occured when setting scene: {ex}"); }
         }
 
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
-            if (config.UseDiscordRPC == true)
+            if (enabled.Value)
             {
                 try
                 {
@@ -211,7 +210,7 @@ namespace VampireRPC
 
                     client.SetPresence(presence);
                 }
-                catch (System.Exception ex) { MelonLogger.Error($"Error in FixedUpdate loop: {ex}"); }
+                catch (Exception ex) { MelonLogger.Error($"Error in FixedUpdate loop: {ex}"); }
             }
             else
             {
@@ -224,25 +223,5 @@ namespace VampireRPC
 
         [HarmonyPatch(typeof(MainGamePage), nameof(MainGamePage.Awake))]
         static class PatchMainGamePage { static void Postfix(MainGamePage __instance) => MelonLogger.Msg($"Setting MainGamePage variable: {mainGamePage = __instance}"); }
-
-        private static void ValidateConfig()
-        {
-            try
-            {
-                if (!Directory.Exists(configFolder)) Directory.CreateDirectory(configFolder);
-                if (!File.Exists(filePath)) File.WriteAllText(filePath, JsonConvert.SerializeObject(new ConfigData { }, Formatting.Indented));
-
-                LoadConfig();
-            }
-            catch (System.Exception ex) { MelonLogger.Error($"Error validating Config: {ex}"); }
-        }
-
-        private static void LoadConfig()
-        {
-            JObject json = JObject.Parse(File.ReadAllText(filePath) ?? "{}");
-
-            config.Name = (string)json.GetValue("Name");
-            config.UseDiscordRPC = (bool)json.GetValue("UseDiscordRPC");
-        }
     }
 }
