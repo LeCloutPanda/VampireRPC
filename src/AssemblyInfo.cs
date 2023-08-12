@@ -12,4 +12,4 @@ using VampireRPC.src;
 [assembly: AssemblyFileVersion(ModInfo.Version)]
 [assembly: MelonInfo(typeof(VampireRPC.src.VampireRPC), ModInfo.Name, ModInfo.Version, ModInfo.Author, ModInfo.DownloadLink)]
 
-[assembly: MelonGame("poncle", "VampireSurvivors")]
+[assembly: MelonGame("poncle", "Vampire Survivors")]
