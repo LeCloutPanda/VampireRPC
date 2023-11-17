@@ -20,7 +20,7 @@
       <HintPath>D:\Games\SteamLibrary\steamapps\common\Vampire Survivors\MelonLoader\net6\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="DiscordRPC">
-      <HintPath>D:\Games\SteamLibrary\steamapps\common\Vampire Survivors\Mods\DiscordRPC (2).dll</HintPath>
+      <HintPath>D:\Games\SteamLibrary\steamapps\common\Vampire Survivors\Mods\DiscordRPC.dll</HintPath>
     </Reference>
     <Reference Include="Il2CppInterop.Runtime">
       <HintPath>D:\Games\SteamLibrary\steamapps\common\Vampire Survivors\MelonLoader\Dependencies\SupportModules\Il2CppInterop.Runtime.dll</HintPath>
@@ -60,9 +60,6 @@
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
       <HintPath>D:\Games\SteamLibrary\steamapps\common\Vampire Survivors\MelonLoader\Il2CppAssemblies\UnityEngine.InputLegacyModule.dll</HintPath>
-    </Reference>
-    <Reference Include="VSMenuHelper">
-      <HintPath>D:\Games\SteamLibrary\steamapps\common\Vampire Survivors\Mods\VSMenuHelper.dll</HintPath>
     </Reference>
   </ItemGroup>
 

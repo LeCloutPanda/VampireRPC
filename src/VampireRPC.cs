@@ -2,7 +2,6 @@
 using Il2CppVampireSurvivors;
 using Il2CppVampireSurvivors.Framework;
 using MelonLoader;
-using VSMenuHelper;
 using Il2CppVampireSurvivors.UI;
 using static Il2CppVampireSurvivors.UI.OptionsController;
 using UnityEngine;
@@ -16,7 +15,7 @@ namespace VampireRPC.src
         public const string Description = "Adds in Discord Rich Presence support.";
         public const string Author = "LeCloutPanda";
         public const string Company = "Pandas Hell Hole";
-        public const string Version = "1.0.2.0";
+        public const string Version = "1.0.2";
         public const string DownloadLink = "https://github.com/LeCloutPanda/VampireRPC";
     }
 
@@ -43,14 +42,11 @@ namespace VampireRPC.src
 
         private MelonPreferences_Category preferences;
         private static MelonPreferences_Entry<bool> enabled;
-        private static MenuHelper MenuHelper;
+
         public override void OnInitializeMelon()
         {
             preferences = MelonPreferences.CreateCategory("vampirerpc_preferences");
             enabled = preferences.CreateEntry("enabled", true);
-
-            MenuHelper = new();
-            DeclareMenuTabs(MenuHelper);
 
             try
             {
@@ -71,35 +67,6 @@ namespace VampireRPC.src
                     }
                 });
             }
-        }
-
-        private void DeclareMenuTabs(MenuHelper MenuHelper)
-        {
-            string imagePath = Path.Combine(Directory.GetCurrentDirectory(), "resources", "panda", "vampirerpc.png");
-
-            MenuHelper.DeclareTab("Config Tab", imagePath);
-
-            MenuHelper.AddElementToTab("Config Tab", new TickBox("enabled", () => enabled.Value, (value) => enabled.Value = value));
-        }
-
-        [HarmonyPatch(typeof(OptionsController))]
-        class Example_OptionsController_Patch
-        {
-            [HarmonyPatch(nameof(OptionsController.Construct))]
-            [HarmonyPrefix]
-            static void Construct_Prefix() => MenuHelper.Construct_Prefix();
-
-            [HarmonyPatch(nameof(OptionsController.Initialize))]
-            [HarmonyPrefix]
-            static void Initialize_Prefix(OptionsController __instance) => MenuHelper.Initialize_Prefix(__instance);
-
-            [HarmonyPatch(nameof(OptionsController.GetTabSprite))]
-            [HarmonyPostfix]
-            static void GetTabSprite_Postfix(OptionsTabType t, ref Sprite __result) => __result = MenuHelper.OnGetTabSprite(t) ?? __result;
-
-            [HarmonyPatch(nameof(OptionsController.BuildPage))]
-            [HarmonyPrefix]
-            static bool BuildPage_Prefix(OptionsController __instance, OptionsTabType type) => MenuHelper.OnBuildPage(__instance, type);
         }
 
         public override void OnApplicationQuit()
