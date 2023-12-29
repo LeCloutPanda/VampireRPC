@@ -2,9 +2,6 @@
 using Il2CppVampireSurvivors;
 using Il2CppVampireSurvivors.Framework;
 using MelonLoader;
-using Il2CppVampireSurvivors.UI;
-using static Il2CppVampireSurvivors.UI.OptionsController;
-using UnityEngine;
 using DiscordRPC;
 
 namespace VampireRPC.src
@@ -15,7 +12,7 @@ namespace VampireRPC.src
         public const string Description = "Adds in Discord Rich Presence support.";
         public const string Author = "LeCloutPanda";
         public const string Company = "Pandas Hell Hole";
-        public const string Version = "1.0.2";
+        public const string Version = "1.0.3";
         public const string DownloadLink = "https://github.com/LeCloutPanda/VampireRPC";
     }
 
